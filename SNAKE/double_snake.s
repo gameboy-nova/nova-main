@@ -1,0 +1,1379 @@
+
+;0------->snake1
+;1------->snake2
+    EXPORT SNAKE_GAMEP2
+	import image
+	import snake_up
+	import downSnake
+	import right_snake 
+	import left_snake
+	import snake_body
+	import snake_body2	
+	import up_snake2
+	import right_snake2	
+	import left_snake2	
+	import downSnake2
+	import CHARS
+	import DIGITS
+	import WINNER_MESSAGE
+	import DRAW_MESSAGE
+	import PLAYER_SNAKE
+	import MSG3
+	import DRAW_RECT
+	import CUSTOM_DELAY
+	import DELAY_1_SECOND
+	import PRINT
+	import PRINT_NUM
+	import TFT_DrawImage
+	import GAME_BACK_HANDLE
+	import BACK_TO_MAIN
+    AREA MYDATA, DATA, READWRITE
+ 
+;SNAKE INFO
+SNAKE1_SIZEP2 DCB 0X1
+SNAKE1_ARRAYP2  SPACE 256 
+
+SNAKE2_SIZEP2 DCB 0X1
+SNAKE2_ARRAYP2  SPACE 256 
+
+	
+DIRECTION1P2 DCB 	0X1
+DIRECTION2P2 DCB 	0X1
+
+Current_SnakeP2 DCB 0x0
+
+Snake_partP2 DCB 0x0
+
+APPLE_POSITIONP2 DCW 0X0809  ;  0X((X1),(Y1))      
+Apple_random_posP2 DCW 0X0809
+
+DELAY_INTERVAL  EQU     0x18604 
+SOURCE_DELAY_INTERVAL EQU   0x386004   
+FRAME_DELAY 	EQU 	0x68605
+	
+	
+; Define register base addresses
+RCC_BASE        EQU     0x40023800
+GPIOA_BASE      EQU     0x40020000
+GPIOB_BASE		EQU		0x40020400
+GPIOC_BASE		EQU		0x40020800
+GPIOD_BASE		EQU		0x40020C00
+GPIOE_BASE		EQU		0x40021000
+ 
+; Define register offsets
+RCC_AHB1ENR     EQU     0x30
+GPIO_MODER      EQU     0x00
+GPIO_OTYPER     EQU     0x04
+GPIO_OSPEEDR    EQU     0x08
+GPIO_PUPDR      EQU     0x0C
+GPIO_IDR        EQU     0x10
+GPIO_ODR        EQU     0x14
+	
+;Colors
+Red     EQU 0xF800  ; 11111 000000 00000
+Green   EQU 0x07E0  ; 00000 111111 00000
+Blue    EQU 0x001F  ; 00000 000000 11111
+Yellow  EQU 0xFFE0  ; 11111 111111 00000
+White   EQU 0xFFFF  ; 11111 111111 11111
+Black   EQU 0x0000  ; 00000 000000 00000 
+Gray 	EQU 0Xbbbbbb 
+	
+	
+; Game Pad buttons A
+BTN_AR          EQU     (1 << 3)
+BTN_AL          EQU     (1 << 5)
+BTN_AU          EQU     (1 << 1)
+BTN_AD          EQU     (1 << 4)
+
+; Game Pad buttons B
+BTN_BR          EQU     (1 << 7)
+BTN_BL          EQU     (1 << 9)
+BTN_BU          EQU     (1 << 8)
+BTN_BD          EQU     (1 << 6)
+    AREA RESET, CODE, READONLY
+ 
+
+ 
+SNAKE_GAMEP2
+	BL START_UP_SNAKEP2
+
+Snake_LoopP2
+	BL get_randomP2
+    LDR R0, =2*FRAME_DELAY
+    BL CUSTOM_DELAY
+	;R12 does not change so it stores its last direction
+    BL READ_INPUT1P2
+	LDR R0,=DIRECTION1P2
+	LDRB R12,[R0]
+
+    CMP R12, #1
+    BEQ MOV_UP_SNAKEP2
+	
+    CMP R12, #2
+    BEQ MOV_DOWN_SNAKEP2
+
+    CMP R12, #3
+    BEQ MOV_RIGHT_SNAKEP2
+
+    CMP R12, #4
+    BEQ MOV_LEFT_SNAKEP2
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Snake_LoopP22
+
+	BL BACK_TO_MAIN
+
+ 	BL READ_INPUT2P2
+	LDR R0,=DIRECTION2P2
+	LDRB R12,[R0]
+
+    CMP R12, #1
+    BEQ MOV_UP_SNAKEP2
+	
+    CMP R12, #2
+    BEQ MOV_DOWN_SNAKEP2
+
+    CMP R12, #3
+    BEQ MOV_RIGHT_SNAKEP2
+
+    CMP R12, #4
+    BEQ MOV_LEFT_SNAKEP2
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    B Snake_LoopP2
+
+MOV_UP_SNAKEP2
+
+	BL Load_SnakeP2
+	MOV R8,R12
+    LDRH R9,[R8]
+	; PUT X IN R0, Y IN R1
+	MOV R0,R9
+	LSR R0,#8
+	MOV R1,R9
+	AND R1,#0xFF
+	; IF I IN THE HIGHEST ROW 
+	CMP R1,#3
+	BEQ START_FROM_BOTTOMP2
+	
+	; IF NOT
+	SUB R1,#1
+	;PUT DIMENSION IN R9
+
+    MOV R9,R0
+	LSL R9,#8
+	ADD R9,R1
+	
+	BL MOVE_THE_SNAKEP2
+	B TO_SUITABLE_LOOPP2
+
+START_FROM_BOTTOMP2
+	MOV R1,#30
+	;PUT DIMENSION IN R9
+	MOV R9,R0
+	LSL R9,#8
+	ADD R9,R1
+	BL MOVE_THE_SNAKEP2
+    B TO_SUITABLE_LOOPP2
+MOV_DOWN_SNAKEP2
+	BL Load_SnakeP2
+	MOV R8,R12
+    LDRH R9,[R8]
+	; PUT X IN R0, Y IN R1
+	MOV R0,R9
+	LSR R0,#8
+	MOV R1,R9
+	AND R1,#0xFF
+	; IF I IN THE ROW 30 
+	CMP R1,#30
+	BEQ START_FROM_UPP2
+	
+	; IF NOT
+	ADD R1,#1
+	;PUT DIMENSION IN R9
+	MOV R9,R0
+	LSL R9,#8
+	ADD R9,R1
+	BL MOVE_THE_SNAKEP2
+	B TO_SUITABLE_LOOPP2
+START_FROM_UPP2
+	MOV R1,#3
+	;PUT DIMENSION IN R9
+	MOV R9,R0
+	LSL R9,#8
+	ADD R9,R1
+	BL MOVE_THE_SNAKEP2
+    B TO_SUITABLE_LOOPP2
+
+MOV_RIGHT_SNAKEP2
+	BL Load_SnakeP2
+	MOV R8,R12
+    LDRH R9,[R8]
+	; PUT X IN R0, Y IN R1
+	MOV R0,R9
+	LSR R0,#8
+	MOV R1,R9
+	AND R1,#0xFF
+	; IF I IN THE COLUMN 40 
+	CMP R0,#40
+	BEQ STRAT_FROM_LEFTP2
+	
+	; IF NOT
+	ADD R0,#1
+	;PUT DIMENSION IN R9
+	MOV R9,R0
+	LSL R9,#8
+	ADD R9,R1
+	BL MOVE_THE_SNAKEP2
+	B TO_SUITABLE_LOOPP2
+STRAT_FROM_LEFTP2
+	MOV R0,#1
+	;PUT DIMENSION IN R9
+	MOV R9,R0
+	LSL R9,#8
+	ADD R9,R1
+	BL MOVE_THE_SNAKEP2
+    B TO_SUITABLE_LOOPP2
+MOV_LEFT_SNAKEP2
+	BL Load_SnakeP2
+	MOV R8,R12
+    LDRH R9,[R8]
+	; PUT X IN R0, Y IN R1
+	MOV R0,R9
+	LSR R0,#8
+	MOV R1,R9
+	AND R1,#0xFF
+	; IF I IN THE COIUMN 1 
+	CMP R0,#1
+	BEQ STRAT_FROM_RIGHTP2
+	
+	; IF NOT
+	SUB R0,#1
+	;PUT DIMENSION IN R9
+	MOV R9,R0
+	LSL R9,#8
+	ADD R9,R1
+	BL MOVE_THE_SNAKEP2
+	B TO_SUITABLE_LOOPP2
+STRAT_FROM_RIGHTP2
+	MOV R0,#40
+	;PUT DIMENSION IN R9
+	MOV R9,R0
+	LSL R9,#8
+	ADD R9,R1
+	BL MOVE_THE_SNAKEP2
+    B TO_SUITABLE_LOOPP2
+
+GET_DIMENSIONSP2
+    ;R9,0X130F
+    ;R1 = X1
+	;R2 = Y1
+	;R3 = X2
+	;R4 = Y2
+    ;GETS THE DIMENSION OF THE SNAKE TO REDRAW
+    ;GET X,R6-Y,R7
+    PUSH{R6-R9,LR}
+    MOV R7,R9  ;GET Y
+	AND R7,R7,#0XFF
+    LSR R6,R9,#8
+	AND R6,R6,#0XFF
+    ;MULTIPLYING BY 8 
+    LSL R6,#3
+    LSL R7,#3
+	
+	SUB R6,#4
+	SUB R7,#4
+    ;GET X1,X2
+    MOV R1,R6
+    SUB R1,#4
+    MOV R3,R6
+    ADD R3,#3
+    ;GET Y1,Y2
+    MOV R2,R7
+    SUB R2,#4
+    MOV R4,R7
+    ADD R4,#3
+    POP {R6-R9,PC}
+
+	LTORG
+START_UP_SNAKEP2
+	PUSH{R0-R11,LR}
+
+	LDR R0,=Snake_partP2
+	LDRB R1,[R0]
+	MOV R1,#0
+	STRB R1,[R0]
+
+	;draw the whole background
+	MOV R1, #0
+    MOV R2, #0									 
+    MOV R3, #320
+    MOV R4, #240                            
+    LDR R5, =Black										 
+	BL DRAW_RECT
+	;draw the border
+	MOV R1, #0
+    MOV R2, #15									 
+    MOV R3, #320
+    MOV R4, #15                            
+    LDR R5, =White
+	BL DRAW_RECT
+	;draw PLAYER_SNAKEs
+	MOV R1,#0
+	MOV R2,#0
+	LDR R3,=PLAYER_SNAKE
+	MOV R4,White
+	MOV R5,Black
+	BL PRINT
+	MOV R1,#159
+	BL PRINT
+
+	MOV R1,#95
+	MOV R3,#1
+	BL PRINT_NUM
+	MOV R1,#255
+	MOV R3,#2
+	BL PRINT_NUM
+
+;SET SNAKE DIMENSION
+	LDR R0,=SNAKE1_ARRAYP2
+	LDRH R1,[R0]
+	MOV R1,#0x0D0F
+	STRH R1,[R0]
+	MOV R1,#0x0D10
+	STRH R1,[R0,#2]
+
+	LDR R0,=SNAKE1_SIZEP2
+	LDRB R1,[R0]
+	MOV R1,#0X02
+	STRB R1,[R0]
+
+	LDR R0,=SNAKE2_ARRAYP2
+	LDRH R1,[R0]
+	MOV R1,#0x1A0F
+	STRH R1,[R0]
+	MOV R1,#0x1A10
+	STRH R1,[R0,#2]
+
+	LDR R0,=SNAKE2_SIZEP2
+	LDRB R1,[R0]
+	MOV R1,#0X02
+	STRB R1,[R0]
+;Draw Snake
+	LDR R8,=SNAKE1_ARRAYP2
+    LDRH R9,[R8]
+    BL GET_DIMENSIONSP2
+	LDR R3,=snake_up
+	;BL SET_HEAD_UP
+	;BL Load_Image
+	BL TFT_DrawImage
+
+
+	LDR R8,=SNAKE1_ARRAYP2
+    LDRH R9,[R8,#2]                                                                               
+    BL GET_DIMENSIONSP2
+    LDR R3,=snake_body
+  ; BL set_body
+   ; BL Load_Image
+	BL TFT_DrawImage
+	LDR R8,=SNAKE2_ARRAYP2
+    LDRH R9,[R8]
+    BL GET_DIMENSIONSP2
+	LDR R3,=up_snake2
+	;BL SET_HEAD_UP
+	;BL Load_Image
+	BL TFT_DrawImage
+
+
+	LDR R8,=SNAKE2_ARRAYP2
+    LDRH R9,[R8,#2]                                                                               
+    BL GET_DIMENSIONSP2
+    LDR R3,=snake_body2
+  ; BL set_body
+  ; BL Load_Image
+	BL TFT_DrawImage
+		
+	;Draw_APPLEP2
+	LDR R10,=APPLE_POSITIONP2
+	MOV R9,0X0404
+	STRH R9,[R10]
+		
+	LDR R0,=Apple_random_posP2
+	MOV R9,0X0404
+	STRH R9,[R0]
+	BL Draw_APPLEP2
+	
+	LDR R0, =DIRECTION1P2
+	MOV R1,#1
+	STRB R1,[R0]
+
+	LDR R0, =DIRECTION2P2
+	MOV R1,#1
+	STRB R1,[R0]
+
+	LDR R0,=Current_SnakeP2
+	MOV R1,#0X0
+	STRB R1,[R0]
+	
+	BL PRINT_SCOREP2
+	BL TOOGLE_Current_SnakeP2
+	BL PRINT_SCOREP2
+	BL TOOGLE_Current_SnakeP2
+
+	POP{R0-R11,PC}
+	  
+
+;#####################################################################################################################################################################
+GO_SNAKEP2
+	PUSH{LR}
+	BL SNAKE_GAMEP2
+	POP {PC}
+;#####################################################################################################################################################################	
+
+	; load suitable snake array in R12
+Load_SnakeP2
+	push{R0-R11,LR}
+
+	LDR R0,=Current_SnakeP2
+	LDRB R1,[R0]
+	CMP R1,0X1
+	BEQ LOAD2
+	LDR R12,=SNAKE1_ARRAYP2
+	B ENDLOAD
+LOAD2
+	LDR R12,=SNAKE2_ARRAYP2
+
+ENDLOAD
+	pop{R0-R11,PC}
+
+; STORE FROM R12 INTO suitable snake array
+
+; get the part in Snake_partP2
+; 0->body  1->up 2->down 3->right 4->left
+Load_Image
+	PUSH{R0,R1,LR}
+	LDR R0,=Current_SnakeP2
+	LDRB R1,[R0]
+	CMP R1,#0X1
+	BEQ IMAGE_SNAKE_2
+	LDR R0,=Snake_partP2
+	LDRB R1,[R0]
+
+	CMP R1,#0
+	BEQ IMAGE_BODY1
+	CMP R1,#1
+	BEQ IMAGE_UP1
+	CMP R1,#2
+	BEQ IMAGE_DOWN1
+	CMP R1,#3
+	BEQ IMAGE_RIGHT1
+	CMP R1,#4
+	BEQ IMAGE_LEFT1
+	B END_IMAGE
+
+IMAGE_BODY1
+	LDR R3,=snake_body
+	B END_IMAGE
+IMAGE_UP1
+	LDR R3,=snake_up
+	B END_IMAGE	
+IMAGE_DOWN1
+	LDR R3,=downSnake
+	B END_IMAGE		
+
+IMAGE_RIGHT1
+	LDR R3,=right_snake
+	B END_IMAGE	
+
+IMAGE_LEFT1
+	LDR R3,=left_snake
+	B END_IMAGE	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+IMAGE_SNAKE_2
+
+	LDR R0,=Snake_partP2
+	LDRB R1,[R0]
+
+	CMP R1,#0
+	BEQ IMAGE_BODY2
+	CMP R1,#1
+	BEQ IMAGE_UP2
+	CMP R1,#2
+	BEQ IMAGE_DOWN2
+	CMP R1,#3
+	BEQ IMAGE_RIGHT2
+	CMP R1,#4
+	BEQ IMAGE_LEFT2
+	B END_IMAGE
+
+IMAGE_BODY2
+	LDR R3,=snake_body2
+	B END_IMAGE
+IMAGE_UP2
+	LDR R3,=up_snake2
+	B END_IMAGE	
+IMAGE_DOWN2
+	LDR R3,=downSnake2
+	B END_IMAGE		
+
+IMAGE_RIGHT2
+	LDR R3,=right_snake2
+	B END_IMAGE	
+
+IMAGE_LEFT2
+	LDR R3,=left_snake2
+	B END_IMAGE	
+
+
+END_IMAGE
+	POP{R0,R1,PC}
+
+set_body
+	push{R0,R1,LR}
+	LDR R0,=Snake_partP2
+	LDRB R1,[R0]
+	MOV R1,#0
+	STRB R1,[R0]
+	POP{R0,R1,PC}
+
+SET_HEAD_UP
+	push{R0,R1,LR}
+	LDR R0,=Snake_partP2
+	LDRB R1,[R0]
+	MOV R1,#1
+	STRB R1,[R0]
+	POP{R0,R1,PC}
+
+SET_HEAD_DOWN
+	push{R0,R1,LR}
+	LDR R0,=Snake_partP2
+	LDRB R1,[R0]
+	MOV R1,#2
+	STRB R1,[R0]
+	POP{R0,R1,PC}
+
+SET_HEAD_RIGHT
+	push{R0,R1,LR}
+	LDR R0,=Snake_partP2
+	LDRB R1,[R0]
+	MOV R1,#3
+	STRB R1,[R0]
+	POP{R0,R1,PC}
+
+SET_HEAD_LEFT
+	push{R0,R1,LR}
+	LDR R0,=Snake_partP2
+	LDRB R1,[R0]
+	MOV R1,#4
+	STRB R1,[R0]
+	POP{R0,R1,PC}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; load suitable snake SIZE in R12
+Load_SnakeP2_SIZE
+	push{R0-R11,LR}
+
+	LDR R0,=Current_SnakeP2
+	LDRB R1,[R0]
+	CMP R1,0X1
+	BEQ LOAD2S
+	LDR R12,=SNAKE1_SIZEP2
+	B ENDLOADS
+LOAD2S
+	LDR R12,=SNAKE2_SIZEP2
+
+ENDLOADS
+	pop{R0-R11,PC}
+
+	LTORG
+TOOGLE_Current_SnakeP2
+	PUSH{R0-R12,LR}
+	LDR R0,=Current_SnakeP2
+	LDRB R1,[R0]
+	AND R1,R1,#0X1
+	EOR R1,#1
+	STRB R1,[R0]
+	POP{R0-R12,PC}	
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+TO_SUITABLE_LOOPP2	 
+	BL TOOGLE_Current_SnakeP2
+	LDR R0,=Current_SnakeP2
+	LDRB R1,[R0]
+	CMP R1,#1
+	BEQ Snake_LoopP22
+	B Snake_LoopP2
+
+	;****************************************************************************************************
+	
+READ_INPUT1P2
+	PUSH {R0-R1,R12, LR}
+
+    LDR R0, =GPIOB_BASE + GPIO_IDR
+    LDR R1, [R0]
+
+	LDR R0,=DIRECTION1P2
+	LDRB R12,[R0]
+
+	
+    TST R1, #BTN_AR
+ 	BNE COMMAND_RIGHT1P2
+
+    TST R1, #BTN_AL
+	BNE COMMAND_LEFT1P2
+
+    TST R1, #BTN_AU
+	BNE COMMAND_UP1P2
+    
+    TST R1, #BTN_AD
+	BNE COMMAND_DOWN1P2
+	
+	
+
+    B END_INPUT1P2
+
+COMMAND_RIGHT1P2
+	CMP R12,#4
+	BEQ END_INPUT1P2
+	LDR R0,=DIRECTION1P2
+	MOV R12,#3
+	STRB R12,[R0]
+	B END_INPUT1P2
+
+COMMAND_LEFT1P2
+	CMP R12,#3
+	BEQ END_INPUT1P2
+	LDR R0,=DIRECTION1P2
+	MOV R12,#4
+	STRB R12,[R0]
+	B END_INPUT1P2
+
+COMMAND_DOWN1P2
+	CMP R12,#1
+	BEQ END_INPUT1P2
+	LDR R0,=DIRECTION1P2
+	MOV R12,#2
+	STRB R12,[R0]
+	B END_INPUT1P2
+COMMAND_UP1P2
+	CMP R12,#2
+	BEQ END_INPUT1P2
+	LDR R0,=DIRECTION1P2
+	MOV R12,#1
+	STRB R12,[R0]
+	B END_INPUT1P2
+	
+END_INPUT1P2
+  
+	POP {R0-R1,R12, PC}
+;#####################################################################################################################################################################	
+READ_INPUT2P2
+	PUSH {R0-R1,R12, LR}
+
+    LDR R0, =GPIOB_BASE + GPIO_IDR
+    LDR R1, [R0]
+
+	LDR R0,=DIRECTION2P2
+	LDRB R12,[R0]
+
+    TST R1, #BTN_BR
+	BNE COMMAND_RIGHT2P2
+
+    TST R1, #BTN_BL
+	BNE COMMAND_LEFT2P2
+
+    TST R1, #BTN_BU
+	BNE COMMAND_UP2P2
+    
+    TST R1, #BTN_BD
+	BNE COMMAND_DOWN2P2
+	
+    B END_INPUT2P2
+
+COMMAND_RIGHT2P2
+	CMP R12,#4
+	BEQ END_INPUT2P2
+	LDR R0,=DIRECTION2P2
+	MOV R12,#3
+	STRB R12,[R0]
+	B END_INPUT2P2
+
+COMMAND_LEFT2P2
+	CMP R12,#3
+	BEQ END_INPUT2P2
+	LDR R0,=DIRECTION2P2
+	MOV R12,#4
+	STRB R12,[R0]
+	B END_INPUT2P2
+
+COMMAND_DOWN2P2
+	CMP R12,#1
+	BEQ END_INPUT2P2
+	LDR R0,=DIRECTION2P2
+	MOV R12,#2
+	STRB R12,[R0]
+	B END_INPUT2P2
+COMMAND_UP2P2
+	CMP R12,#2
+	BEQ END_INPUT2P2
+	LDR R0,=DIRECTION2P2
+	MOV R12,#1
+	STRB R12,[R0]
+	B END_INPUT2P2
+	
+
+END_INPUT2P2
+  
+	POP {R0-R1,R12, PC}
+
+
+
+;####################################################################################################################################################################3 
+ ;=================================SNAKE_LOGIC===========================
+; this branch generate random num and put it in R0
+get_randomP2
+	push{R0,R1,LR}
+	LDR R1, =Apple_random_posP2 
+	LDRH R0, [R1]
+	;AND R0,#0XFFFF
+	;ADD R0,#0X0101
+	;PUT X IN R2, Y IN R3
+	MOV R2,R0
+	LSR R2,#8
+	AND R2,0XFF
+
+	MOV R3,R0
+	AND R3,0XFF
+	
+	ADD R2,#1
+	CMP R2,#40 
+	MOVEQ R2,#1
+
+	ADD R3,#1
+	CMP R3,#30 
+	MOVEQ R3,#3
+
+	;STORE X,Y IN R0
+	MOV R0,R2
+	LSL R0,#8
+	ADD R0,R3
+
+	STRH R0,[R1]
+	POP{R0,R1,PC}
+	
+	
+Draw_APPLEP2
+		push{R0-R12,LR}
+REDraw_APPLEP2
+	BL CHANGE_POSP2
+	LDR R0,=APPLE_POSITIONP2
+	LDRH R9,[R0]	
+		
+	 	
+		; detrmine wether there is a snake in r9 or not
+		BL HAS_SNAKEP2     ; IF R10=0 -> THERE IS NOT A SNAKE ->RRAW
+						 ; IF R10=1 -> THERE IS A SNAKE GET ANOTHER PLACE
+		CMP R10,#1
+        BEQ REDraw_APPLEP2	
+
+		BL TOOGLE_Current_SnakeP2
+		BL HAS_SNAKEP2
+		CMP R10,#1
+		BEQ redraw_after2
+		BL TOOGLE_Current_SnakeP2
+		B passP2
+
+redraw_after2
+		BL TOOGLE_Current_SnakeP2
+		B REDraw_APPLEP2
+
+passP2		
+		;DRAW THE APPLE
+		;CHANGE THIS TO PICTURE :)
+
+
+
+		;GET CORRECT DIMENSIONS
+		BL GET_DIMENSIONSP2
+		;SET COLOR RED
+		;LDR R5,=Red
+		;DRAW THE APPLE
+	;	BL DRAW_RECT
+		LDR R3, =image
+		BL TFT_DrawImage
+		
+		POP{R0-R12,PC}
+		
+		
+		
+; IF THERE IS A SNAKE MAKE R10=1 
+; IF FREE -> R10=0
+HAS_SNAKEP2
+	PUSH{R0-R9,R12,LR}
+	BL TOOGLE_Current_SnakeP2
+	BL Load_SnakeP2 
+	MOV R4,R12
+	MOV R10,#0x0
+	;SET R1 AS COUNT
+	BL Load_SnakeP2_SIZE
+	MOV R2,R12
+	LDRB R1,[R2]
+; IF SNAKE LENGHT =1
+	CMP R1,#1
+	BEQ LAST_CHECKP2
+
+	SUB R1,#1
+	
+COMPARE_LOOPP2
+;SIZE 3
+
+	LDRH R3,[R4,R1,LSL #1] 
+	CMP R3,R9
+	BEQ HAS_A_SNAKEP2
+	SUB R1,#1
+	CMP R1,#0
+	BEQ LAST_CHECKP2
+	B COMPARE_LOOPP2
+	
+LAST_CHECKP2
+	LDRH R3,[R4]
+	CMP R3,R9
+	BEQ HAS_A_SNAKEP2
+	B TO_ENDP2
+	
+HAS_A_SNAKEP2
+
+	MOV R10,#0X1
+
+
+TO_ENDP2
+	BL TOOGLE_Current_SnakeP2
+	POP{R0-R9,R12,PC}
+		
+	
+		
+; IF THERE IS A SNAKE MAKE R10=1 
+
+	
+; PUT THE NEW POSITION OF HEAD IN R9 THEN CALL THE FUNCTION
+;NEW POSITION IN R9
+MOVE_THE_SNAKEP2
+
+	PUSH{R0-R1,R9,LR}
+	
+	; CHECK IF I EAT MYSELF OR NOTE
+	BL HAS_SNAKEP2
+	CMP R10,#1
+	BEQ LOSE_SCREENP2
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	BL TOOGLE_Current_SnakeP2
+	 BL HAS_SNAKEP2
+	
+    ;BL TOOGLE_Current_SnakeP2
+	CMP R10,#1
+	BEQ TEMP_LOSEP2
+	 BL TOOGLE_Current_SnakeP2
+	 B END_TEMP_LOSE
+
+TEMP_LOSEP2
+	 BL TOOGLE_Current_SnakeP2
+	 BL LOSE_SCREENP2
+	 ;B END_TEMP_LOSE	
+
+END_TEMP_LOSE
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;
+	; CHECK IF I EAT AN APPLE OR NOT
+	LDR R0,=APPLE_POSITIONP2
+	LDRH R1,[R0]
+	CMP R9,R1
+	BLEQ GROW_SNAKEP2
+;RETURN_PLS	
+	;BEQ GROW_SNAKEP2
+	;BEQ CHANGE_POSP2
+	
+	
+
+	BL REDRAW_WITOUT_EAT_APPLEP2
+       
+	BL SHIFT_LOOPP2
+
+
+	
+;MOV R8,#0
+;CMP R8,#0
+	
+  
+
+END_MOVEP2
+	POP{R0-R1,R9,PC}
+
+
+
+
+	LTORG
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+LOSE_SCREENP2
+
+	MOV R0,R9
+	;MOV R1, #0
+;	LDRH R1,[R0]
+	MOV R2, #0
+	LDR R2,=SNAKE2_ARRAYP2
+	LDRH R3,[R2]
+	
+
+	LDR R9,=SNAKE1_SIZEP2
+	LDRB R10,[R9]
+	LDR R11,=SNAKE2_SIZEP2
+	LDRB R12,[R11]
+	CMP R0,R3
+	BEQ DRAW_SCREENP2
+
+	BL TOOGLE_Current_SnakeP2
+
+	LDR R6,=Current_SnakeP2
+	LDRB R7,[R6]
+	CMP R7,#0
+	BEQ SNAKE1_WINP2
+	B SNAKE2_WINP2
+	
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+DRAW_SCREENP2
+	CMP R10,R12 
+	BEQ DRAW_SCREENP20
+	BGT SNAKE1_WINP2
+	BLT SNAKE2_WINP2 
+
+DRAW_SCREENP20	
+	MOV R1, #0
+    MOV R2, #0									 
+    MOV R3, #320
+    MOV R4, #240                            
+    LDR R5, =Gray										 
+	BL DRAW_RECT
+
+	MOV R1, #48
+	MOV R2, #104
+	LDR R3, =DRAW_MESSAGE
+	LDR R4, =Black
+	LDR R5, =Gray
+	BL PRINT
+
+	MOV R1, #80
+	MOV R2, #120
+	LDR R3, =MSG3
+	LDR R4, =Black
+	LDR R5, =Gray
+	BL PRINT
+
+	MOV R1, #224
+	MOV R2, #120
+	SUB R10,#2
+	MOV R3, R10
+	LDR R4, =Black
+	LDR R5, =Gray
+	BL PRINT_NUM
+
+	B END_LOOSEP2
+
+SNAKE1_WINP2
+	MOV R1, #0
+    MOV R2, #0									 
+    MOV R3, #320
+    MOV R4, #240                            
+    LDR R5, =Green										 
+	BL DRAW_RECT
+
+	MOV R1, #16
+	MOV R2, #104
+	LDR R3, =WINNER_MESSAGE
+	LDR R4, =Black
+	LDR R5, =Green
+	BL PRINT
+
+	MOV R1, #288
+	MOV R2, #104
+	MOV R3, #1
+	MOV R4, #Black
+	MOV R5, #Green
+	BL PRINT_NUM
+
+
+	MOV R1, #80
+	MOV R2, #120
+	LDR R3, =MSG3
+	LDR R4, =Black
+	LDR R5, =Green
+	BL PRINT
+
+	MOV R1, #224
+	MOV R2, #120
+	SUB R10,#2
+	MOV R3, R10
+	LDR R4, =Black
+	LDR R5, =Green
+	BL PRINT_NUM
+
+	B END_LOOSEP2	
+
+SNAKE2_WINP2
+	MOV R1, #0
+    MOV R2, #0									 
+    MOV R3, #320
+    MOV R4, #240                            
+    LDR R5, =Blue										 
+	BL DRAW_RECT
+
+	MOV R1, #16
+	MOV R2, #104
+	LDR R3, =WINNER_MESSAGE
+	MOV R4, #White
+	MOV R5, #Blue
+	BL PRINT
+
+	MOV R1, #288
+	MOV R2, #104
+	MOV R3, #2
+	MOV R4, #White
+	MOV R5, #Blue
+	BL PRINT_NUM
+
+
+	MOV R1, #80
+	MOV R2, #120
+	LDR R3, =MSG3
+	MOV R4, #White
+	MOV R5, #Blue
+	BL PRINT
+
+	MOV R1, #224
+	MOV R2, #120
+	SUB R12,#2
+	MOV R3, R12
+	MOV R4, #White
+	MOV R5, #Blue
+	BL PRINT_NUM
+
+
+	B END_LOOSEP2		
+
+END_LOOSEP2	
+	LDR R1, =SNAKE_GAMEP2
+	B GAME_BACK_HANDLE
+	
+GROW_SNAKEP2
+	PUSH{R0-R3,LR}	
+
+	BL Load_SnakeP2_SIZE
+	MOV R0,R12
+	LDRB R1,[R0]
+	ADD R1,#1
+	STRB R1,[R0]
+
+
+	;;;;;;;;;;;;;;
+	CMP R1,#17
+	BEQ WIN_SCREENP2
+	;;;;;;;;;
+	BL Load_SnakeP2
+	MOV R2,R12
+	SUB R1,#1
+	LDRH R3,[R2,R1,LSL #1]
+	MOV R3,#0
+	STRH R3,[R2,R1,LSL #1]
+
+	
+
+
+	BL Draw_APPLEP2
+	BL PRINT_SCOREP2
+	;BL REDRAW_WITOUT_EAT_APPLEP2
+	;BL SHIFT_LOOPP2
+	;B END_MOVEP2
+	
+	POP{R0-R3,PC}	
+	
+WIN_SCREENP2
+
+	LDR R9,=SNAKE1_SIZEP2
+	LDRB R10,[R9]
+	LDR R11,=SNAKE2_SIZEP2
+	LDRB R12,[R11]
+
+	LDR R6,=Current_SnakeP2
+	LDRB R7,[R6]
+	CMP R7,#0
+	BEQ SNAKE1_WINP21
+	B SNAKE2_WINP21
+
+SNAKE1_WINP21
+	MOV R1, #0
+    MOV R2, #0									 
+    MOV R3, #320
+    MOV R4, #240                            
+    LDR R5, =Green										 
+	BL DRAW_RECT
+
+	MOV R1, #16
+	MOV R2, #104
+	LDR R3, =WINNER_MESSAGE
+	LDR R4, =Black
+	LDR R5, =Green
+	BL PRINT
+
+	MOV R1, #288
+	MOV R2, #104
+	MOV R3, #1
+	MOV R4, #Black
+	MOV R5, #Green
+	BL PRINT_NUM
+
+
+	MOV R1, #80
+	MOV R2, #120
+	LDR R3, =MSG3
+	LDR R4, =Black
+	LDR R5, =Green
+	BL PRINT
+
+	MOV R1,#224
+	MOV R2, #120
+	SUB R10,#2
+	MOV R3, R10
+	LDR R4, =Black
+	LDR R5, =Green
+	BL PRINT_NUM
+
+	B END_LOOSEP21	
+
+SNAKE2_WINP21
+	MOV R1, #0
+    MOV R2, #0									 
+    MOV R3, #320
+    MOV R4, #240                            
+    LDR R5, =Blue										 
+	BL DRAW_RECT
+
+	MOV R1, #16
+	MOV R2, #104
+	LDR R3, =WINNER_MESSAGE
+	MOV R4, #White
+	MOV R5, #Blue
+	BL PRINT
+
+	MOV R1, #288
+	MOV R2, #104
+	MOV R3, #2
+	MOV R4, #White
+	MOV R5, #Blue
+	BL PRINT_NUM
+
+
+	MOV R1, #80
+	MOV R2, #120
+	LDR R3, =MSG3
+	MOV R4, #White
+	MOV R5, #Blue
+	BL PRINT
+
+	MOV R1, #224
+	MOV R2, #120
+	SUB R12,#2
+	MOV R3, R12
+	MOV R4, #White
+	MOV R5, #Blue
+	BL PRINT_NUM
+
+
+	B END_LOOSEP21		
+
+END_LOOSEP21	
+	B .
+	
+
+
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+	
+	
+SHIFT_LOOPP2
+	;PUSH{R0-R12,LR}
+
+
+	BL Load_SnakeP2
+	MOV R4,R12
+	 BL Load_SnakeP2_SIZE
+	
+	MOV R10,R12
+	LDRB R1,[R10]
+    
+    ; Check if size is one get out of the loop
+    CMP R1, #1
+    BEQ SHIFT_ENDP2
+
+
+	SUB R1,#1
+	SUB R2, R1, #1
+INLINE_LOOPP2	
+	LDRH R5,[R4,R2,LSL #1]
+	STRH R5,[R4,R1,LSL #1]
+	SUB R2,#1
+	SUB R1,#1
+
+	CMP R1,#0 ;WHY NOT CMP R2,#0
+
+	BNE INLINE_LOOPP2
+	;TO MOVE LAST ELEMNT
+
+SHIFT_ENDP2
+	STRH R9, [R4]
+    ; R3 was here before
+	;POP{R0-R12,PC}
+	B END_MOVEP2
+	
+
+
+REDRAW_WITOUT_EAT_APPLEP2	
+	PUSH{R5,R7,R11,R10,R8,R9,LR}	
+	;R9 HAS THE NEW HEAD POSTION
+	;DRAW NEW HEAD
+	
+	BL GET_DIMENSIONSP2
+	LDR R11,=Current_SnakeP2
+	LDRB R12,[R11]
+	CMP R12,#1
+
+	LDRNE R11,=DIRECTION1P2
+	LDREQ R11,=DIRECTION2P2
+	LDRB R12,[R11]
+	
+	CMP R12,#1
+	BEQ UP_PHOTOP2
+	
+	CMP R12,#2
+	BEQ DOWN_PHOTOP2
+	
+	CMP R12,#3
+	BEQ RIGHT_PHOTOP2
+	
+	CMP R12,#4
+	BEQ LEFT_PHOTOP2
+	
+	
+	
+UP_PHOTOP2
+	;LDR R3,=snake_up
+	BL SET_HEAD_UP
+	BL Load_Image
+	B DRAW
+DOWN_PHOTOP2
+	;LDR R3,=downSnake
+	BL SET_HEAD_DOWN
+	BL Load_Image
+	B DRAW
+RIGHT_PHOTOP2
+	;LDR R3,=right_snake
+	BL SET_HEAD_RIGHT
+	BL Load_Image
+	B DRAW
+LEFT_PHOTOP2
+	;LDR R3,=left_snake
+	BL SET_HEAD_LEFT
+	BL Load_Image
+	B DRAW	
+	
+	;LDR R5,=Green
+DRAW	
+	BL TFT_DrawImage
+	
+	BL Load_SnakeP2
+	MOV R7,R12
+	
+
+	;LDRB R10,[R11]
+   ; SUB R10,#1
+	LDRH R8,[R7]
+	;CMP R8,#0
+
+	;BEQ NO_DELETE_TAILP2
+	MOV R7,R9
+	MOV R9,R8
+	BL GET_DIMENSIONSP2
+	;LDR R3,=snake_body
+	BL set_body
+	BL Load_Image
+	BL TFT_DrawImage
+
+	MOV R9,R7
+	
+	
+	
+
+	BL Load_SnakeP2
+	MOV R7,R12
+	BL Load_SnakeP2_SIZE
+	MOV R11,R12
+	LDRB R10,[R11]
+    SUB R10,#1
+	LDRH R8,[R7,R10,LSL #1]
+	CMP R8,#0
+
+	BEQ NO_DELETE_TAILP2
+	MOV R7,R9
+	MOV R9,R8
+	BL GET_DIMENSIONSP2
+	LDR R5,=Black
+	BL DRAW_RECT
+	MOV R9,R7
+NO_DELETE_TAILP2
+	POP{R5,R7,R11,R10,R8,R9,PC}
+	LTORG
+
+
+
+
+
+
+
+	
+CHANGE_POSP2
+	PUSH{R0-R2,LR}
+	LDR R0,=Apple_random_posP2
+	LDR R1,=APPLE_POSITIONP2
+	LDRH R2,[R0]
+	STRH R2,[R1]
+	
+	;BL Draw_APPLEP2
+	POP{R0-R2,PC}
+
+
+PRINT_SCOREP2
+	PUSH{R0-R7,LR}
+	LDR R7,=Current_SnakeP2
+	LDRB R6,[R7]
+	CMP R6,#1
+	MOVNE R1,#127
+	MOVEQ R1,#287
+	MOV R2,#0
+	LDRNE R4,=SNAKE1_SIZEP2
+	LDREQ R4,=SNAKE2_SIZEP2
+	LDRB R3,[R4]
+	SUB R3,#2
+	LDR R4,=Black
+	LDR R5,=White
+	BL PRINT_NUM
+	POP{R0-R7,PC}
+
+	
+END
+
+
+
+
+
+
