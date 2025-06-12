@@ -1,4 +1,16 @@
-## NOVA GameBoy 🎮
+<p align="center">
+<img src="https://github.com/user-attachments/assets/b1f1405b-8515-4816-b6a7-776fea1652cd" width="300">
+</p>
+<h1 align="center"> 
+NOVA
+</h1>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/ARM%20Assembly-black?style=for-the-badge&logo=arm&logoColor=white&labelColor=blue&color=white" >
+  <img src="https://img.shields.io/badge/ARM%20Keil-black?style=for-the-badge&logo=armkeil&logoColor=white&logoSize=20&labelColor=green&color=white" >
+  <img src="https://img.shields.io/badge/STM32-black?style=for-the-badge&logo=stmicroelectronics&logoColor=blue&logoSize=20&labelColor=white&color=blue" >
+</p>
+
 ## 📜 Overview
 
 **"NOVA Gameboy"** is a custom-built, retro-inspired handheld console powered by the **STM32F401 "Black Pill"** and written entirely in **32-bit ARM Assembly**.  
@@ -6,6 +18,34 @@ Featuring a vibrant **2.8" TFT display**, physical gamepad input, and a sleek in
 
 Engineered without an OS or high-level libraries, this project is a full demonstration of **real-time embedded systems**, showcasing **manual hardware control**, **modular game architecture**, and **smooth 2D rendering**—all running directly on the **ARM Cortex-M4**.  
 It’s not just a console—it’s a hands-on journey into the world of **low-level game development** and **embedded design**.
+
+---
+
+## 🎮 Game Gallery
+
+Click on any game below to go to their corresponding repo.
+
+<p align="center">
+  <a href="https://github.com/gameboy-nova/nova-pong">
+    <img src="https://github.com/user-attachments/assets/80fedc08-9ff2-4530-95c5-f435feafb829" alt="Ping game" title="Ping"/>
+  </a>
+  <a href="https://github.com/gameboy-nova/nova-painter">
+    <img src="https://github.com/user-attachments/assets/00992b02-5a82-4578-a00c-4774118c0a2d" alt="Painter" title="Painter"/>
+  </a>
+  <a href="https://github.com/gameboy-nova/nova-fruit">
+    <img src="https://github.com/user-attachments/assets/353a8ab4-e6c3-454a-b627-dad135f0a0dc" alt="Fruit Basket" title="Fruit Basket"/>
+  </a>
+  <a href="https://github.com/gameboy-nova/nova-double-snake">
+    <img src="https://github.com/user-attachments/assets/58ab7350-25bf-4434-b392-eb9b0475bbec" alt="Double Snake" title="Double Snake"/>
+  </a>
+  <a href="https://github.com/gameboy-nova/nova-snake">
+    <img src="https://github.com/user-attachments/assets/f7061555-99e7-4d8e-9147-abccedb19cfc" alt="Snake" title="Snake"/>
+  </a>
+  <a href="https://github.com/gameboy-nova/nova-star-blast">
+    <img src="https://github.com/user-attachments/assets/6558931d-5b3e-4eed-a298-4b57864daa1b" alt="Shooter" title="Shooter"/>
+  </a>
+</p>
+
 
 
 ---
@@ -23,6 +63,13 @@ It’s not just a console—it’s a hands-on journey into the world of **low-le
 | **Resistors**    | Assorted values (used for pull-up/pull-down configs) |
 | **Audio**        | Passive buzzer (for simple sound output)             |
 
+---
+
+## 🔌 Wiring & Breadboard Layout
+
+Here's an overview of the wiring and breadboard layout for this project:
+
+![7a7ee16b-1ccd-4f07-a8cd-5b9e4395bf2c](https://github.com/user-attachments/assets/331c0878-ab3c-4dec-9ad8-fbd0c900f1bb)
 
 ---
 
